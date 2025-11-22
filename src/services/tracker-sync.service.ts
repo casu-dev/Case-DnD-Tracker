@@ -237,22 +237,22 @@ export class TrackerSyncService {
       case 0: return { 
         text: 'Healthy', 
         colorClass: 'bg-green-100 text-green-800 border-green-300',
-        icon: 'M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z'
+        icon: 'fas fa-heart'
       };
       case 1: return { 
         text: 'Hurt', 
         colorClass: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-        icon: 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z'
+        icon: 'fas fa-triangle-exclamation'
       };
       case 2: return { 
         text: 'Bloodied', 
         colorClass: 'bg-orange-100 text-orange-800 border-orange-300',
-        icon: 'M12.75 3.03v.568c0 .334.148.65.405.864l1.068.89c.442.369.535 1.01.216 1.49l-.51.766a2.25 2.25 0 0 1-1.161.886l-.143.048a1.12 1.12 0 0 0-.536.13l-.25.1c-.538.214-1.055.214-1.593 0l-.25-.1a1.12 1.12 0 0 0-.536-.13l-.143-.048a2.25 2.25 0 0 1-1.161-.886l-.51-.766c-.318-.48-.226-1.121.216-1.49l1.068-.89a1.125 1.125 0 0 0 .405-.864v-.568a3 3 0 0 1 3.032-3.032Zm-3.032 9.043c.205 0 .39.02.57.056l.106.022c.18.036.35.086.51.15l.64.256a2.25 2.25 0 0 0 2.132 0l.64-.256c.16-.064.33-.114.51-.15l.106-.022a4.493 4.493 0 0 1 5.12 4.493 2.25 2.25 0 0 1-2.25 2.25h-6.75a2.25 2.25 0 0 1-2.25-2.25 4.493 4.493 0 0 1 5.12-4.493Z'
+        icon: 'fas fa-droplet'
       };
       case 3: return { 
         text: 'Defeated', 
         colorClass: 'bg-stone-200 text-stone-600 border-stone-400',
-        icon: 'M12.25,2A10.25,10.25,0,0,0,2,12.25C2,17.77,6.48,22.25,12,22.25,17.52,22.25,22,17.77,22,12.25A10.25,10.25,0,0,0,12.25,2M9,9A2,2,0,0,1,11,11A2,2,0,0,1,9,13A2,2,0,0,1,7,11A2,2,0,0,1,9,9M15,9A2,2,0,0,1,17,11A2,2,0,0,1,15,13A2,2,0,0,1,13,11A2,2,0,0,1,15,9M12,16A4,4,0,0,1,8,20H16A4,4,0,0,1,12,16Z'
+        icon: 'fas fa-skull-crossbones'
       };
       default: return null;
     }
@@ -269,7 +269,9 @@ export class TrackerSyncService {
       if (a.initiative !== b.initiative) {
         return b.initiative! - a.initiative!;
       }
-      return a.name.localeCompare(b.name);
+      // Initiatives are identical. Return 0 to use a stable sort,
+      // preserving the order from the DM's tracker.
+      return 0;
     });
 
     return {

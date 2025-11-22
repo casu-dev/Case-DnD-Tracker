@@ -1,0 +1,59 @@
+<div class="max-w-xl mx-auto text-center p-4">
+  <div class="my-8">
+    <i class="fas fa-scroll text-6xl text-stone-500/80"></i>
+  </div>
+
+  <header class="mb-8">
+    <h1 class="text-6xl font-dnd-header text-red-900 mb-2" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">Initiative Player View</h1>
+    <p class="text-lg text-stone-700">A live companion for your D&D 5e combat encounters.</p>
+  </header>
+
+  <main class="bg-stone-200/60 p-8 rounded-lg shadow-2xl border-2 border-stone-400/50">
+    <div class="mb-4">
+      <label for="roomId" class="block text-left text-sm font-bold text-stone-800 mb-2">
+        Enter Your DM's Room ID
+      </label>
+      <input 
+        id="roomId" 
+        type="text"
+        class="w-full p-3 bg-stone-50 border border-stone-400 rounded-md focus:ring-2 focus:ring-amber-600 focus:border-amber-600 transition-colors text-stone-900 font-mono text-lg shadow-inner"
+        [ngModel]="roomId()"
+        (ngModelChange)="roomId.set($event)"
+        (keyup.enter)="onConnect()"
+        placeholder="e.g. aBcDeFgH">
+    </div>
+
+    @if (errorMessage()) {
+      <div class="my-4 p-3 bg-red-200 border border-red-400 text-red-900 rounded-md text-left text-sm">
+        <p>{{ errorMessage() }}</p>
+      </div>
+    }
+    
+    <button 
+      (click)="onConnect()" 
+      [disabled]="connectionState() === 'connecting' || connectionState() === 'waiting' || !roomId()" 
+      class="w-full flex items-center justify-center py-3 px-4 bg-red-800 hover:bg-red-700 rounded-lg text-white font-semibold text-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 disabled:bg-stone-500 disabled:cursor-not-allowed disabled:scale-100 border border-red-950"
+    >
+      @if (connectionState() === 'connecting' || connectionState() === 'waiting') {
+        <i class="fas fa-spinner fa-spin mr-3"></i>
+        @if(connectionState() === 'connecting') {
+          <span>Connecting...</span>
+        } @else {
+          <span>Waiting for Data...</span>
+        }
+      } @else {
+        <span>Connect to the Adventure</span>
+      }
+    </button>
+  </main>
+
+  <footer class="mt-12 p-6 bg-stone-500/10 border-t-2 border-dashed border-stone-400/50 rounded-lg text-left">
+    <h2 class="font-semibold mb-3 text-stone-800 text-lg">How to Join the Session:</h2>
+    <ol class="list-decimal list-inside space-y-2 text-stone-700">
+      <li>Your Dungeon Master must be using the Initiative Tracker on the <strong class="font-semibold text-stone-800">5e.tools DM Screen</strong>.</li>
+      <li>The DM clicks the <strong class="font-semibold text-stone-800">"Player View"</strong> button in the tracker's toolbar.</li>
+      <li>A link will be generated, like: <code class="bg-stone-300 px-1.5 py-0.5 rounded text-xs text-stone-800">.../dmscreen.html#AbcDeFg</code></li>
+      <li>The Room ID is the sequence of characters after the <code class="bg-stone-300 px-1.5 py-0.5 rounded text-xs text-stone-800">#</code> symbol.</li>
+    </ol>
+  </footer>
+</div>

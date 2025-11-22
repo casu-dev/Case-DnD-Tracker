@@ -1,39 +1,30 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { TrackerSyncService, ROOM_ID_STORAGE_KEY } from './services/tracker-sync.service';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { TrackerSyncService } from './services/tracker-sync.service';
+import { ConnectionComponent } from './app/connection/connection.component';
+import { TrackerComponent } from './app/tracker/tracker.component';
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule],
+  imports: [ConnectionComponent, TrackerComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   private trackerSyncService = inject(TrackerSyncService);
 
-  roomId = signal('');
-
-  // Directly use signals from the service
+  // Expose service signals to the template
   trackerData = this.trackerSyncService.trackerData;
   connectionState = this.trackerSyncService.connectionState;
   errorMessage = this.trackerSyncService.errorMessage;
 
-  ngOnInit(): void {
-    const savedRoomId = localStorage.getItem(ROOM_ID_STORAGE_KEY);
-    if (savedRoomId) {
-      this.roomId.set(savedRoomId);
+  connect(roomId: string): void {
+    if (roomId) {
+      this.trackerSyncService.connect(roomId);
     }
   }
 
-  connect(): void {
-    if (this.roomId().trim()) {
-      this.trackerSyncService.connect(this.roomId().trim());
-    }
-  }
-
-  reset(): void {
+  disconnect(): void {
     this.trackerSyncService.disconnect();
-    this.roomId.set('');
   }
 }

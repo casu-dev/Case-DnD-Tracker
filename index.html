@@ -44,8 +44,17 @@
   }
 }
 </script>
+
+  <!-- Add ts-browser to enable in-browser TypeScript compilation -->
+  <!-- This must be in the head to process subsequent scripts -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ts-browser@2.0.1/dist/ts-browser.js"></script>
+
 </head>
 <body class="text-stone-800 antialiased">
   <app-root></app-root>
+
+  <!-- Load the main application entry point -->
+  <!-- Note: The type is "module-ts" which is handled by ts-browser -->
+  <script type="module-ts" src="index.tsx"></script>
 </body>
 </html>

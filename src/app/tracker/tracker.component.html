@@ -17,8 +17,7 @@
         [class.shadow-lg]="creature.isActive"
         [class.scale-105]="creature.isActive"
         [class.opacity-50]="creature.woundInfo?.text === 'Defeated'"
-        [class.opacity-75]="!creature.isActive && creature.woundInfo?.text !== 'Defeated'"
-        >
+        [class.opacity-75]="!creature.isActive && creature.woundInfo?.text !== 'Defeated'">
         <div class="flex items-center gap-4">
           <div class="text-3xl font-bold text-stone-600 w-10 text-center flex-shrink-0">{{ creature.initiative ?? '--' }}</div>
           

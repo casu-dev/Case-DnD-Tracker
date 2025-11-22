@@ -8,17 +8,7 @@
 
   <section class="space-y-3">
     @for (creature of trackerData().creatures; track creature.id) {
-      <div 
-        class="flex items-center justify-between p-4 rounded-lg bg-stone-500/10 border transition-all duration-300"
-        [class.border-amber-600]="creature.isActive"
-        [class.border-2]="creature.isActive"
-        [class.border-stone-400/50]="!creature.isActive"
-        [class.shadow-amber-600/30]="creature.isActive"
-        [class.shadow-lg]="creature.isActive"
-        [class.scale-105]="creature.isActive"
-        [class.opacity-50]="creature.woundInfo?.text === 'Defeated'"
-        [class.opacity-75]="!creature.isActive && creature.woundInfo?.text !== 'Defeated'"
-      >
+      <div [class]="getCreatureClassString(creature)">
         <div class="flex items-center gap-4">
           <div class="text-3xl font-bold text-stone-600 w-10 text-center flex-shrink-0">{{ creature.initiative ?? '--' }}</div>
           

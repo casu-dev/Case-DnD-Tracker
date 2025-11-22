@@ -1,0 +1,4 @@
+/* This file can be used for component-specific styles, though Tailwind is preferred. */
+.font-dnd-header {
+  font-family: 'IM Fell English SC', serif;
+}

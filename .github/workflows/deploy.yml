@@ -12,9 +12,7 @@ on:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write # Allow to push to the gh-pages branch
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -23,37 +21,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deployment job since we're just deploying
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  # Build and deploy job
+  build_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Build and Deploy to GitHub Pages
+        uses: AhsanAyaz/angular-deploy-gh-pages-actions@v1.4.0
         with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build application
-        run: npm run build -- --base-href /Case-DnD-Tracker/
-
-      - name: Set up Pages
-        uses: actions/configure-pages@v5
-        
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # Upload output from the build folder
-          path: 'dist/case-dnd-tracker'
-          
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          build_configuration: production # The build configuration for the angular build
+          base_href: /Case-DnD-Tracker/ # The base-href for the application
+          deploy_branch: gh-pages # The branch to which the build is deployed
+          angular_dist_build_folder: dist/case-dnd-tracker # The name of the angular build output directory

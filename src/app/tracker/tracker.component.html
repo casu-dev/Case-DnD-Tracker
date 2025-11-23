@@ -1,65 +1,58 @@
 <div class="max-w-4xl mx-auto">
   <header class="flex justify-between items-center mb-6">
     <h1 class="text-5xl font-dnd-header text-red-900">Round {{ trackerData().round }}</h1>
-    <button (click)="onDisconnect()" class="px-4 py-2 bg-red-800 hover:bg-red-700 rounded-lg shadow-md transition-colors duration-200 text-white border border-red-950">
+    <button (click)="onDisconnect()"
+      class="px-4 py-2 bg-red-800 hover:bg-red-700 rounded-lg shadow-md transition-colors duration-200 text-white border border-red-950">
       Disconnect
     </button>
   </header>
 
   <section class="space-y-3">
     @for (creature of trackerData().creatures; track creature.id) {
-      <div 
-        class="flex items-center justify-between p-4 rounded-lg bg-stone-500/10 border transition-all duration-300"
-        [class.border-amber-600]="creature.isActive"
-        [class.border-2]="creature.isActive"
-        [class.border-stone-400/50]="!creature.isActive"
-        [class.shadow-amber-600/30]="creature.isActive"
-        [class.shadow-lg]="creature.isActive"
-        [class.scale-105]="creature.isActive"
-        [class.opacity-50]="creature.woundInfo?.text === 'Defeated'"
-        [class.opacity-75]="!creature.isActive && creature.woundInfo?.text !== 'Defeated'">
-        <div class="flex items-center gap-4">
-          <div class="text-3xl font-bold text-stone-600 w-10 text-center flex-shrink-0">{{ creature.initiative ?? '--' }}</div>
-          
-          <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
-            @if (creature.isPlayer) {
-              <i class="fa-solid fa-user-shield text-blue-800 text-2xl"></i>
-            } @else {
-              <i class="fa-solid fa-dragon text-red-800 text-2xl"></i>
-            }
-          </div>
-
-          <div class="flex items-center gap-3">
-            <p class="text-xl font-bold"
-              [class.line-through]="creature.woundInfo?.text === 'Defeated'"
-              [class.text-stone-600]="creature.woundInfo?.text === 'Defeated'"
-              [class.text-blue-900]="creature.isPlayer && creature.woundInfo?.text !== 'Defeated'"
-              [class.text-red-900]="!creature.isPlayer && creature.woundInfo?.text !== 'Defeated'">
-              {{ creature.name }}
-            </p>
-            @if(creature.woundInfo; as woundInfo) {
-              <span 
-                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full shadow border"
-                [class]="woundInfo.colorClass"
-              >
-                <i [class]="woundInfo.icon"></i>
-                {{ woundInfo.text }}
-              </span>
-            }
-          </div>
+    <div class="flex items-center justify-between p-4 rounded-lg bg-stone-500/10 border transition-all duration-300"
+      [class.border-amber-600]="creature.isActive" [class.border-2]="creature.isActive"
+      [class.border-stone-400]="!creature.isActive" [class.shadow-amber-600]="creature.isActive"
+      [class.shadow-lg]="creature.isActive" [class.scale-105]="creature.isActive"
+      [class.opacity-50]="creature.woundInfo?.text === 'Defeated'"
+      [class.opacity-75]="!creature.isActive && creature.woundInfo?.text !== 'Defeated'">
+      <div class="flex items-center gap-4">
+        <div class="text-3xl font-bold text-stone-600 w-10 text-center flex-shrink-0">{{ creature.initiative ?? '--' }}
         </div>
 
-        <div class="flex flex-wrap gap-2 justify-end">
-          @for (effect of creature.statusEffects; track effect.name) {
-            <span 
-              class="px-2 py-1 text-white text-xs font-medium rounded-full shadow border border-black/20"
-              [style.background-color]="effect.color"
-            >
-              {{ effect.name }}
-            </span>
+        <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+          @if (creature.isPlayer) {
+          <i class="fa-solid fa-user-shield text-blue-800 text-2xl"></i>
+          } @else {
+          <i class="fa-solid fa-dragon text-red-800 text-2xl"></i>
+          }
+        </div>
+
+        <div class="flex items-center gap-3">
+          <p class="text-xl font-bold" [class.line-through]="creature.woundInfo?.text === 'Defeated'"
+            [class.text-stone-600]="creature.woundInfo?.text === 'Defeated'"
+            [class.text-blue-900]="creature.isPlayer && creature.woundInfo?.text !== 'Defeated'"
+            [class.text-red-900]="!creature.isPlayer && creature.woundInfo?.text !== 'Defeated'">
+            {{ creature.name }}
+          </p>
+          @if(creature.woundInfo; as woundInfo) {
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full shadow border"
+            [class]="woundInfo.colorClass">
+            <i [class]="woundInfo.icon"></i>
+            {{ woundInfo.text }}
+          </span>
           }
         </div>
       </div>
+
+      <div class="flex flex-wrap gap-2 justify-end">
+        @for (effect of creature.statusEffects; track effect.name) {
+        <span class="px-2 py-1 text-white text-xs font-medium rounded-full shadow border border-black/20"
+          [style.background-color]="effect.color">
+          {{ effect.name }}
+        </span>
+        }
+      </div>
+    </div>
     }
   </section>
 </div>

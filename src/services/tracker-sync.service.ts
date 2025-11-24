@@ -81,10 +81,10 @@ export class TrackerSyncService {
       }
       localStorage.setItem(ROOM_ID_STORAGE_KEY, roomId);
     }
-    
+
     // Clean up any existing connection before starting a new one.
     this.cleanup();
-    
+
     this.connectionState.set('connecting');
     this.errorMessage.set(isRetry ? `Reconnecting... (Attempt ${this.currentRetries}/${this.maxRetries})` : null);
     this.trackerData.set(null);
@@ -156,7 +156,7 @@ export class TrackerSyncService {
         } else if (err.type === 'network') {
           message = 'Network error. Please check your internet connection and firewall settings.';
         } else {
-            message = `Error: ${err.message || err.type}`;
+          message = `Error: ${err.message || err.type}`;
         }
         this.errorMessage.set(message);
         this.scheduleReconnect();
@@ -201,7 +201,7 @@ export class TrackerSyncService {
     if (this.currentRetries < this.maxRetries && this.lastRoomId) {
       this.currentRetries++;
       this.connectionState.set('error'); // Show an error state during retry wait
-      
+
       // Use exponential backoff for retries
       const waitTime = this.retryDelay * Math.pow(2, this.currentRetries - 1);
       const waitSeconds = Math.round(waitTime / 1000);
@@ -209,7 +209,7 @@ export class TrackerSyncService {
       this.errorMessage.set(
         `Connection lost. Retrying in ${waitSeconds}s... (Attempt ${this.currentRetries}/${this.maxRetries})`
       );
-      
+
       console.log(`Scheduling reconnect in ${waitSeconds} seconds.`);
       this.retryTimeout = setTimeout(() => {
         this.retryTimeout = null; // Clear the lock before the next attempt.
@@ -243,23 +243,23 @@ export class TrackerSyncService {
   private getWoundLevelInfo(level: number): WoundInfo | null {
     if (level < 0) return null; // Players are < 0 and don't show wound levels.
     switch (level) {
-      case 0: return { 
-        text: 'Healthy', 
+      case 0: return {
+        text: 'Healthy',
         colorClass: 'bg-green-100 text-green-800 border-green-300',
         icon: 'fas fa-heart'
       };
-      case 1: return { 
-        text: 'Hurt', 
+      case 1: return {
+        text: 'Hurt',
         colorClass: 'bg-yellow-100 text-yellow-800 border-yellow-300',
         icon: 'fas fa-triangle-exclamation'
       };
-      case 2: return { 
-        text: 'Bloodied', 
+      case 2: return {
+        text: 'Bloodied',
         colorClass: 'bg-orange-100 text-orange-800 border-orange-300',
         icon: 'fas fa-droplet'
       };
-      case 3: return { 
-        text: 'Defeated', 
+      case 3: return {
+        text: 'Defeated',
         colorClass: 'bg-stone-200 text-stone-600 border-stone-400',
         icon: 'fas fa-skull-crossbones'
       };

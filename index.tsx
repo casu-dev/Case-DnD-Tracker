@@ -1,3 +1,4 @@
+import 'zone.js'; // Ensure this line is present and at the top
 import '@angular/compiler';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideZoneChangeDetection } from '@angular/core';

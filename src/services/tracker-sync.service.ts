@@ -268,22 +268,14 @@ export class TrackerSyncService {
   }
 
   private mapStatePayloadToTrackerData(payload: RawStatePayload): TrackerData {
-    const validCreatures = payload.rows
+    // The rows from the payload are already in the correct turn order,
+    // including any tie-breakers the DM has resolved. We should not re-sort them.
+    const creaturesInOrder = payload.rows
       .filter((row): row is RawCreatureRow & { name: string } => !!row.name);
-
-    const sortedCreatures = [...validCreatures].sort((a, b) => {
-      if (a.initiative === null && b.initiative !== null) return 1;
-      if (a.initiative !== null && b.initiative === null) return -1;
-      if (a.initiative === null && b.initiative === null) return a.name.localeCompare(b.name);
-      if (a.initiative !== b.initiative) {
-        return b.initiative! - a.initiative!;
-      }
-      return a.name.localeCompare(b.name);
-    });
 
     return {
       round: payload.round,
-      creatures: sortedCreatures.map((row, index) => ({
+      creatures: creaturesInOrder.map((row, index) => ({
         id: `${row.name}-${row.initiative}-${index}`,
         name: row.name,
         initiative: row.initiative,

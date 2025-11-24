@@ -14,6 +14,7 @@ export class ConnectionComponent implements OnInit {
   connectionState = input.required<'disconnected' | 'connecting' | 'connected' | 'error' | 'waiting'>();
   errorMessage = input.required<string | null>();
   connect = output<string>();
+  disconnect = output<void>();
 
   roomId = signal('');
 
@@ -41,5 +42,9 @@ export class ConnectionComponent implements OnInit {
 
   onConnect(): void {
     this.connect.emit(this.roomId().trim());
+  }
+
+  onCancel(): void {
+    this.disconnect.emit();
   }
 }

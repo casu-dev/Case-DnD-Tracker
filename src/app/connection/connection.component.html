@@ -26,13 +26,18 @@
     }
 
     @if (connectionState() === 'connecting' || connectionState() === 'waiting') {
-      <div class="my-4 p-3 bg-blue-200 border border-blue-400 text-blue-900 rounded-md text-left flex items-center">
-        <i class="fas fa-spinner fa-spin -ml-1 mr-3 h-5 w-5 text-blue-800"></i>
-        @if(connectionState() === 'connecting') {
-            <p>Connecting to server...</p>
-        } @else {
-            <p>Connected! Waiting for DM's data...</p>
-        }
+      <div class="my-4 p-3 bg-blue-200 border border-blue-400 text-blue-900 rounded-md text-left flex items-center justify-between">
+        <div class="flex items-center">
+          <i class="fas fa-spinner fa-spin -ml-1 mr-3 h-5 w-5 text-blue-800"></i>
+          @if(connectionState() === 'connecting') {
+              <p>Connecting to server...</p>
+          } @else {
+              <p>Connected! Waiting for DM's data...</p>
+          }
+        </div>
+        <button (click)="onCancel()" class="px-3 py-1 text-sm bg-red-700 hover:bg-red-600 text-white rounded-md shadow transition-colors">
+          Cancel
+        </button>
       </div>
     }
     

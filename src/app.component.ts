@@ -18,6 +18,7 @@ export class AppComponent {
   trackerData = this.trackerSyncService.trackerData;
   connectionState = this.trackerSyncService.connectionState;
   errorMessage = this.trackerSyncService.errorMessage;
+  reconnectingAttempt = this.trackerSyncService.reconnectingAttempt;
 
   connect(roomId: string): void {
     if (roomId) {

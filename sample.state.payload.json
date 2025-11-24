@@ -1,0 +1,141 @@
+ {
+  "rows": [
+    {
+      "name": "Vampire Infernalist",
+      "initiative": 25,
+      "isActive": false,
+      "conditions": [],
+      "rowStatColData": [],
+      "hpCurrent": 172,
+      "hpMax": 172,
+      "hpWoundLevel": 0
+    },
+    {
+      "name": "Scion of Surtur",
+      "initiative": 23,
+      "isActive": false,
+      "conditions": [],
+      "rowStatColData": [],
+      "hpCurrent": 0,
+      "hpMax": 546,
+      "hpWoundLevel": 3
+    },
+    {
+      "name": "Storm Herald",
+      "initiative": 18,
+      "isActive": false,
+      "conditions": [],
+      "rowStatColData": [],
+      "hpCurrent": 287,
+      "hpMax": 287,
+      "hpWoundLevel": 0
+    },
+    {
+      "name": "Scion of Skoraeus",
+      "initiative": 18,
+      "isActive": false,
+      "conditions": [],
+      "rowStatColData": [],
+      "hpCurrent": 0,
+      "hpMax": 444,
+      "hpWoundLevel": 3
+    },
+    {
+      "name": "Fensir Devourer",
+      "initiative": 18,
+      "isActive": false,
+      "conditions": [
+        {
+          "id": "7e60945c-87b3-4115-a532-92b22b1a27d1",
+          "entity": {
+            "name": "!!On Fire!!",
+            "color": "#ff6800",
+            "turns": null
+          }
+        }
+      ],
+      "rowStatColData": [],
+      "hpCurrent": 0,
+      "hpMax": 138,
+      "hpWoundLevel": 3
+    },
+    {
+      "name": "Storm Giant Tempest Caller",
+      "initiative": 5,
+      "isActive": false,
+      "conditions": [
+        {
+          "id": "5c7519f0-8277-4c4e-a001-49fc607e693c",
+          "entity": {
+            "name": "Charmed",
+            "color": "#f01789",
+            "turns": null
+          }
+        }
+      ],
+      "rowStatColData": [],
+      "hpCurrent": 100,
+      "hpMax": 310,
+      "hpWoundLevel": 2
+    },
+    {
+      "name": "Fiendish Icon",
+      "initiative": 4,
+      "isActive": true,
+      "conditions": [
+        {
+          "id": "e0157561-78bf-49f1-b39d-0212e03fce40",
+          "entity": {
+            "name": "Invisible",
+            "color": "#7ad2d6",
+            "turns": 3
+          }
+        },
+        {
+          "id": "0aca6717-a7d3-41fb-894e-dd04b01d1b6b",
+          "entity": {
+            "name": "Frightened",
+            "color": "#c9ca18",
+            "turns": 50
+          }
+        }
+      ],
+      "rowStatColData": [],
+      "hpCurrent": 0,
+      "hpMax": 22,
+      "hpWoundLevel": 3
+    },
+    {
+      "name": "ASDASFASF",
+      "initiative": 3,
+      "isActive": false,
+      "conditions": [],
+      "rowStatColData": [],
+      "hpCurrent": 10,
+      "hpMax": 10,
+      "hpWoundLevel": 0
+    },
+    {
+      "name": "Mist Hulk",
+      "initiative": 1,
+      "isActive": false,
+      "conditions": [],
+      "rowStatColData": [],
+      "hpCurrent": 30,
+      "hpMax": 94,
+      "hpWoundLevel": 2
+    },
+    {
+      "name": "TEST",
+      "initiative": null,
+      "isActive": false,
+      "conditions": [],
+      "rowStatColData": [],
+      "hpCurrent": null,
+      "hpMax": null,
+      "hpWoundLevel": -1
+    }
+  ],
+  "statsCols": [],
+  "round": 35
+} 

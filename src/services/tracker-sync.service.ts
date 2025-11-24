@@ -9,9 +9,12 @@ interface RawStatCol {
 }
 
 interface RawCondition {
-  name: string;
-  color: string;
-  // The 'effect' property from the payload is ignored as it's not needed for display
+  // A condition from 5e.tools contains an entity with the display info
+  entity: {
+    name: string;
+    color: string;
+    turns: number | null;
+  };
 }
 
 interface RawStatePayload {
@@ -27,6 +30,8 @@ interface RawCreatureRow {
   conditions: RawCondition[];
   hpWoundLevel: number;
   rowStatColData: string[];
+  hpCurrent: number | null;
+  hpMax: number | null;
 }
 
 // The wrapper used by 5e.tools to send data
@@ -53,16 +58,12 @@ export class TrackerSyncService {
   private peer: any | null = null;
   private connection: any | null = null;
   private lastRoomId: string | null = null;
-
-  // Retry mechanism properties
-  private retryTimeout: any | null = null;
-  private readonly maxRetries = 5;
-  private currentRetries = 0;
-  private readonly retryDelay = 3000; // 3 seconds
+  private reconnectTimeout: any = null; // For handling reconnect timeouts
 
   readonly trackerData = signal<TrackerData | null>(null);
   readonly connectionState = signal<'disconnected' | 'connecting' | 'connected' | 'error' | 'waiting'>('disconnected');
   readonly errorMessage = signal<string | null>(null);
+  readonly reconnectingAttempt = signal<boolean>(false);
 
   constructor() {
     // Prioritize Room ID from URL fragment
@@ -88,26 +89,20 @@ export class TrackerSyncService {
     return null;
   }
 
-  connect(roomId: string, isRetry = false): void {
-    if (!isRetry) {
+  connect(roomId: string, isReconnectAttempt = false): void {
+    if (!isReconnectAttempt) {
       this.lastRoomId = roomId;
-      this.currentRetries = 0;
-      if (this.retryTimeout) {
-        clearTimeout(this.retryTimeout);
-        this.retryTimeout = null;
-      }
       // Store in both local storage (as fallback) and URL fragment (as primary)
       localStorage.setItem(ROOM_ID_STORAGE_KEY, roomId);
       window.location.hash = `v1:${roomId}`;
+      this.connectionState.set('connecting');
+      this.errorMessage.set(null);
+      this.trackerData.set(null);
     }
 
     // Clean up any existing connection before starting a new one.
     this.cleanup();
-
-    this.connectionState.set('connecting');
-    this.errorMessage.set(isRetry ? `Reconnecting... (Attempt ${this.currentRetries}/${this.maxRetries})` : null);
-    this.trackerData.set(null);
-
+    
     try {
       this.peer = new Peer();
 
@@ -117,29 +112,29 @@ export class TrackerSyncService {
         this.connection = this.peer.connect(this.lastRoomId, { reliable: true });
 
         if (!this.connection) {
-          this.errorMessage.set('Failed to initiate connection. The Room ID might be invalid or the peer server is unreachable.');
-          this.scheduleReconnect();
+          const message = 'Failed to initiate connection. The Room ID might be invalid or the peer server is unreachable.';
+          if (isReconnectAttempt) {
+            this.handleReconnectFailure(message);
+          } else {
+            this.errorMessage.set(message);
+            this.connectionState.set('error');
+          }
           return;
         }
 
         // --- Setup DataConnection Listeners ---
         this.connection.on('open', () => {
           console.log('PeerJS data connection is open.');
+          if (isReconnectAttempt) {
+            this.handleReconnectSuccess();
+          }
           this.connectionState.set('waiting');
         });
 
         this.connection.on('data', (packet: PeerPacket) => {
-          // On successful data, reset retry counter as the connection is now stable.
-          if (this.currentRetries > 0) {
-            console.log("Connection re-established successfully.");
-            this.currentRetries = 0;
-            // If we re-established connection, cancel any pending reconnect timeout.
-            if (this.retryTimeout) {
-              clearTimeout(this.retryTimeout);
-              this.retryTimeout = null;
-            }
-          }
-
+           if (this.reconnectingAttempt()) {
+             this.handleReconnectSuccess();
+           }
           // 5e.tools wraps data in a packet. We need to unwrap it.
           if (packet?.head?.type === 'server' && packet?.data?.type === 'state' && packet?.data?.payload) {
             const rawData = packet.data.payload;
@@ -155,14 +150,12 @@ export class TrackerSyncService {
 
         this.connection.on('close', () => {
           console.log('PeerJS connection closed.');
-          this.errorMessage.set('Connection to the DM was closed.');
-          this.scheduleReconnect();
+          this.handleConnectionLoss('Connection to the DM was closed.');
         });
 
         this.connection.on('error', (err: any) => {
           console.error('PeerJS connection error:', err);
-          this.errorMessage.set(`Connection failed: ${err.message || 'An unknown error occurred.'}`);
-          this.scheduleReconnect();
+          this.handleConnectionLoss(`Connection failed: ${err.message || 'An unknown error occurred.'}`);
         });
       });
 
@@ -177,20 +170,29 @@ export class TrackerSyncService {
         } else {
           message = `Error: ${err.message || err.type}`;
         }
-        this.errorMessage.set(message);
-        this.scheduleReconnect();
+        
+        if (isReconnectAttempt) {
+            this.handleReconnectFailure(message);
+        } else {
+            this.errorMessage.set(message);
+            this.connectionState.set('error');
+        }
       });
 
       this.peer.on('disconnected', () => {
         console.log('PeerJS disconnected from the signaling server.');
-        this.errorMessage.set('Lost connection to the signaling server.');
-        this.scheduleReconnect();
+        this.handleConnectionLoss('Lost connection to the signaling server.');
       });
 
     } catch (e: any) {
       console.error('Failed to initialize PeerJS:', e);
-      this.connectionState.set('error');
-      this.errorMessage.set('Failed to initialize connection service. Your browser might not support WebRTC.');
+      const message = 'Failed to initialize connection service. Your browser might not support WebRTC.';
+      if (isReconnectAttempt) {
+        this.handleReconnectFailure(message);
+      } else {
+        this.connectionState.set('error');
+        this.errorMessage.set(message);
+      }
     }
   }
 
@@ -205,51 +207,70 @@ export class TrackerSyncService {
         window.location.hash = '';
     }
 
-    if (this.retryTimeout) {
-      clearTimeout(this.retryTimeout);
-      this.retryTimeout = null;
-    }
     this.lastRoomId = null;
-    this.currentRetries = 0;
     this.cleanup();
     this.trackerData.set(null);
     this.connectionState.set('disconnected');
     this.errorMessage.set(null);
   }
 
-  private scheduleReconnect(): void {
-    // If a reconnect is already scheduled, don't queue another one. This prevents
-    // a cascade of errors on mobile resume from creating a loop.
-    if (this.retryTimeout) {
-      console.log('A reconnect attempt is already pending. Ignoring subsequent triggers.');
+  private handleConnectionLoss(reason: string): void {
+    // If we're already trying to reconnect, do nothing to prevent a loop.
+    if (this.reconnectingAttempt()) {
+      console.log('Connection loss detected while already reconnecting. Ignoring to prevent loop.');
       return;
     }
+
     this.cleanup();
 
-    if (this.currentRetries < this.maxRetries && this.lastRoomId) {
-      this.currentRetries++;
-      this.connectionState.set('error'); // Show an error state during retry wait
-
-      // Use exponential backoff for retries
-      const waitTime = this.retryDelay * Math.pow(2, this.currentRetries - 1);
-      const waitSeconds = Math.round(waitTime / 1000);
-
-      this.errorMessage.set(
-        `Connection lost. Retrying in ${waitSeconds}s... (Attempt ${this.currentRetries}/${this.maxRetries})`
-      );
-
-      console.log(`Scheduling reconnect in ${waitSeconds} seconds.`);
-      this.retryTimeout = setTimeout(() => {
-        this.retryTimeout = null; // Clear the lock before the next attempt.
-        if (this.lastRoomId) {
-          this.connect(this.lastRoomId, true);
+    if (this.trackerData() && this.lastRoomId) {
+      // We were in a session, so attempt a single reconnect.
+      this.reconnectingAttempt.set(true);
+      this.connectionState.set('waiting'); // Visually, we're waiting for something
+      console.log(`Connection lost: "${reason}". Attempting a single reconnect...`);
+      
+      // Set a timeout for the reconnect attempt.
+      this.reconnectTimeout = setTimeout(() => {
+        // The timeout will only trigger a failure if we are still in the reconnecting state.
+        if (this.reconnectingAttempt()) {
+          console.log('Reconnect attempt timed out after 10 seconds.');
+          this.handleReconnectFailure('Connection attempt timed out');
         }
-      }, waitTime);
+      }, 10000); // 10-second timeout
+
+      this.connect(this.lastRoomId, true);
     } else {
-      console.log('Max retries reached. Giving up.');
+      // We were not in a session, just show an error on the connection page.
       this.connectionState.set('error');
-      this.errorMessage.set('Connection failed after multiple retries. Please check the Room ID and your connection, then connect manually.');
+      this.errorMessage.set(reason);
     }
+  }
+  
+  private handleReconnectSuccess(): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+    this.reconnectingAttempt.set(false);
+    console.log('Reconnect successful!');
+  }
+
+  private handleReconnectFailure(reason: string): void {
+    // This function can be called from multiple places (peer error, timeout).
+    // Only act if we are actually in a reconnecting state to avoid race conditions.
+    if (!this.reconnectingAttempt()) {
+      return;
+    }
+
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    console.log('Single reconnect attempt failed:', reason);
+    this.reconnectingAttempt.set(false);
+    this.errorMessage.set(`Reconnect failed: ${reason}. Please connect manually.`);
+    this.disconnect(); // This resets state and brings user to the connection page.
   }
 
   private cleanup(): void {
@@ -271,25 +292,24 @@ export class TrackerSyncService {
   private getWoundLevelInfo(level: number): WoundInfo | null {
     if (level < 0) return null; // Players are < 0 and don't show wound levels.
     switch (level) {
-      case 0: return {
-        text: 'Healthy',
-        colorClass: 'bg-green-100 text-green-800 border-green-300',
-        icon: 'fas fa-heart'
+      case 0: return null; // Healthy
+      case 1: return { 
+        iconClass: 'fas fa-droplet', 
+        colorClass: 'text-amber-600', 
+        title: 'Hurt',
+        isDefeated: false 
       };
-      case 1: return {
-        text: 'Hurt',
-        colorClass: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-        icon: 'fas fa-triangle-exclamation'
+      case 2: return { 
+        iconClass: 'fas fa-burst', 
+        colorClass: 'text-red-700', 
+        title: 'Bloodied',
+        isDefeated: false 
       };
-      case 2: return {
-        text: 'Bloodied',
-        colorClass: 'bg-orange-100 text-orange-800 border-orange-300',
-        icon: 'fas fa-droplet'
-      };
-      case 3: return {
-        text: 'Defeated',
-        colorClass: 'bg-stone-200 text-stone-600 border-stone-400',
-        icon: 'fas fa-skull-crossbones'
+      case 3: return { 
+        iconClass: 'fas fa-skull-crossbones', 
+        colorClass: 'text-stone-500', 
+        title: 'Defeated',
+        isDefeated: true
       };
       default: return null;
     }
@@ -303,18 +323,31 @@ export class TrackerSyncService {
 
     return {
       round: payload.round,
-      creatures: creaturesInOrder.map((row, index) => ({
-        id: `${row.name}-${row.initiative}-${index}`,
-        name: row.name,
-        initiative: row.initiative,
-        isPlayer: row.hpWoundLevel === -1,
-        isActive: row.isActive,
-        statusEffects: (row.conditions || []).map((condition) => ({
-          name: condition.name,
-          color: condition.color,
-        })),
-        woundInfo: this.getWoundLevelInfo(row.hpWoundLevel),
-      })),
+      creatures: creaturesInOrder.map((row, index) => {
+        const conditions = row.conditions || [];
+        const isPlayer = conditions.some(c => c.entity.name === 'Player');
+        const isNpc = conditions.some(c => c.entity.name === 'NPC');
+        
+        return {
+          id: `${row.name}-${row.initiative}-${index}`,
+          name: row.name,
+          initiative: row.initiative,
+          hpCurrent: row.hpCurrent ?? null,
+          hpMax: row.hpMax ?? null,
+          isPlayer,
+          isNpc,
+          isActive: row.isActive,
+          statusEffects: conditions
+            // Don't show the "Player" or "NPC" conditions in the list
+            .filter(c => c.entity.name !== 'Player' && c.entity.name !== 'NPC')
+            .map((condition) => ({
+              name: condition.entity.name,
+              color: condition.entity.color,
+              turns: condition.entity.turns,
+          })),
+          woundInfo: this.getWoundLevelInfo(row.hpWoundLevel),
+        };
+      }),
     };
   }
 }

@@ -65,10 +65,27 @@ export class TrackerSyncService {
   readonly errorMessage = signal<string | null>(null);
 
   constructor() {
+    // Prioritize Room ID from URL fragment
+    const roomIdFromUrl = this.getRoomIdFromUrl();
+    if (roomIdFromUrl) {
+      this.connect(roomIdFromUrl);
+      return; // Stop here if we have a URL-based ID
+    }
+
+    // Fallback to local storage for existing sessions
     const savedRoomId = localStorage.getItem(ROOM_ID_STORAGE_KEY);
     if (savedRoomId) {
       this.connect(savedRoomId);
     }
+  }
+
+  private getRoomIdFromUrl(): string | null {
+    const hash = window.location.hash;
+    // The format is #v1:token-id
+    if (hash && hash.startsWith('#v1:')) {
+      return hash.substring(4);
+    }
+    return null;
   }
 
   connect(roomId: string, isRetry = false): void {
@@ -79,7 +96,9 @@ export class TrackerSyncService {
         clearTimeout(this.retryTimeout);
         this.retryTimeout = null;
       }
+      // Store in both local storage (as fallback) and URL fragment (as primary)
       localStorage.setItem(ROOM_ID_STORAGE_KEY, roomId);
+      window.location.hash = `v1:${roomId}`;
     }
     
     // Clean up any existing connection before starting a new one.
@@ -177,6 +196,15 @@ export class TrackerSyncService {
 
   disconnect(): void {
     localStorage.removeItem(ROOM_ID_STORAGE_KEY);
+    
+    // Clear the URL fragment without adding to history or reloading
+    if (window.history.pushState) {
+        history.pushState("", document.title, window.location.pathname + window.location.search);
+    } else {
+        // Fallback for older browsers
+        window.location.hash = '';
+    }
+
     if (this.retryTimeout) {
       clearTimeout(this.retryTimeout);
       this.retryTimeout = null;

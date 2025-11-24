@@ -9,39 +9,39 @@
       <label for="roomId" class="block text-left text-sm font-bold text-stone-800 mb-2">
         DM's Room ID
       </label>
-      <input 
-        id="roomId" 
-        type="text"
+      <input id="roomId" type="text"
         class="w-full p-3 bg-stone-50 border border-stone-400 rounded-md focus:ring-2 focus:ring-amber-600 focus:border-amber-600 transition-colors text-stone-900 font-mono text-lg shadow-inner"
-        [ngModel]="roomId()"
-        (ngModelChange)="roomId.set($event)"
-        (keyup.enter)="onConnect()"
+        [ngModel]="roomId()" (ngModelChange)="roomId.set($event)" (keyup.enter)="onConnect()"
         placeholder="Enter Room ID...">
     </div>
 
     @if (errorMessage()) {
-      <div class="my-4 p-3 bg-red-200 border border-red-400 text-red-900 rounded-md text-left">
-        <p>{{ errorMessage() }}</p>
-      </div>
+    <div class="my-4 p-3 bg-red-200 border border-red-400 text-red-900 rounded-md text-left">
+      <p>{{ errorMessage() }}</p>
+    </div>
     }
 
     @if (connectionState() === 'connecting' || connectionState() === 'waiting') {
-      <div class="my-4 p-3 bg-blue-200 border border-blue-400 text-blue-900 rounded-md text-left flex items-center justify-between">
-        <div class="flex items-center">
-          <i class="fas fa-spinner fa-spin -ml-1 mr-3 h-5 w-5 text-blue-800"></i>
-          @if(connectionState() === 'connecting') {
-              <p>Connecting to server...</p>
-          } @else {
-              <p>Connected! Waiting for DM's data...</p>
-          }
-        </div>
-        <button (click)="onCancel()" class="px-3 py-1 text-sm bg-red-700 hover:bg-red-600 text-white rounded-md shadow transition-colors">
-          Cancel
-        </button>
+    <div
+      class="my-4 p-3 bg-blue-200 border border-blue-400 text-blue-900 rounded-md text-left flex items-center justify-between">
+      <div class="flex items-center">
+        <i class="fas fa-spinner fa-spin -ml-1 mr-3 h-5 w-5 text-blue-800"></i>
+        @if(connectionState() === 'connecting') {
+        <p>Connecting to server...</p>
+        } @else {
+        <p>Connected! Waiting for DM's data...</p>
+        }
       </div>
+      <button (click)="onCancel()"
+        class="px-3 py-1 text-sm bg-red-700 hover:bg-red-600 text-white rounded-md shadow transition-colors">
+        Cancel
+      </button>
+    </div>
     }
-    
-    <button (click)="onConnect()" [disabled]="connectionState() === 'connecting' || connectionState() === 'waiting' || !roomId()" class="w-full py-3 px-4 bg-red-800 hover:bg-red-700 rounded-lg text-white font-semibold text-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 disabled:bg-stone-500 disabled:cursor-not-allowed disabled:scale-100 border border-red-950 flex items-center justify-center">
+
+    <button (click)="onConnect()"
+      [disabled]="connectionState() === 'connecting' || connectionState() === 'waiting' || !roomId()"
+      class="w-full py-3 px-4 bg-red-800 hover:bg-red-700 rounded-lg text-white font-semibold text-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 disabled:bg-stone-500 disabled:cursor-not-allowed disabled:scale-100 border border-red-950 flex items-center justify-center">
       <i class="fas fa-link mr-2"></i>
       <span>Connect</span>
     </button>
@@ -49,10 +49,11 @@
     <div class="mt-6 text-left text-sm text-stone-600">
       <p class="font-semibold mb-2 text-stone-700">How to get the Room ID:</p>
       <ol class="list-decimal list-inside space-y-1">
-        <li>Your DM needs to be using the Initiative Tracker on 5e.tools.</li>
+        <li>Your DM needs to be using the Initiative Tracker on <code
+            class="bg-stone-300 px-1 rounded text-xs text-stone-800"><a href="https://2014.5e.tools/dmscreen.html" target="_blank">2014.5e.tools</a></code>.
+        </li>
         <li>DM clicks the "Player View" button in the tracker.</li>
-        <li>A link will be generated, e.g., <code class="bg-stone-300 px-1 rounded text-xs text-stone-800">...#AbcDeFg</code></li>
-        <li>The Room ID is the part after the <code class="bg-stone-300 px-1 rounded text-xs text-stone-800">#</code> symbol.</li>
+        <li>A token will be generated. This is the Room ID.</li>
       </ol>
     </div>
   </main>

@@ -26,12 +26,17 @@
 
         <!-- Icon -->
         <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
-          @if (creature.isPlayer) {
+          @if (creature.iconOverrideClass) {
+          <i [class]="'fas ' + creature.iconOverrideClass + ' text-2xl'" [style.color]="creature.iconOverrideColor"
+            [title]="creature.name"></i>
+          } @else if (creature.isPlayer) {
           <i class="fas fa-user-shield text-2xl text-blue-800" title="Player"></i>
           } @else if (creature.isNpc) {
           <i class="fas fa-user text-2xl text-green-800" title="NPC"></i>
+          } @else if (creature.isBoss) {
+          <i class="fas fa-dragon text-2xl text-red-900" title="Boss"></i>
           } @else {
-          <i class="fas fa-dragon text-2xl text-red-900" title="Monster"></i>
+          <i class="fas fa-skull text-2xl text-stone-700" title="Monster"></i>
           }
         </div>
 

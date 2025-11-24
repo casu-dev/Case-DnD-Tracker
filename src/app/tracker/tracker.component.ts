@@ -3,6 +3,7 @@ import { TrackerData } from '../../models/tracker.model';
 
 @Component({
   selector: 'app-tracker',
+  standalone: true,
   imports: [],
   templateUrl: './tracker.component.html',
   styleUrls: ['./tracker.component.css'],

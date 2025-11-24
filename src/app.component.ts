@@ -5,6 +5,7 @@ import { TrackerComponent } from './app/tracker/tracker.component';
 
 @Component({
   selector: 'app-root',
+  standalone: true,
   imports: [ConnectionComponent, TrackerComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],

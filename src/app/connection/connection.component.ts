@@ -4,6 +4,7 @@ import { ROOM_ID_STORAGE_KEY } from '../../services/tracker-sync.service';
 
 @Component({
   selector: 'app-connection',
+  standalone: true,
   imports: [FormsModule],
   templateUrl: './connection.component.html',
   styleUrls: ['./connection.component.css'],

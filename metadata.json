@@ -1,6 +1,5 @@
 {
   "name": "5e Initiative Player View",
   "description": "A player view for D&D 5e initiative trackers. Paste data from your DM to see the current turn order and combat status.",
-  "index": "index.html",
   "requestFramePermissions": []
 }

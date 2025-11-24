@@ -6,7 +6,7 @@ export interface StatusEffect {
 export interface WoundInfo {
   text: string;
   colorClass: string;
-  icon: string; // SVG path data for an icon
+  icon: string; // Font Awesome icon class name
 }
 
 export interface Creature {

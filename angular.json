@@ -1,47 +1,26 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
-  "newProjectRoot": "projects",
+  "newProjectRoot": "",
   "projects": {
-    "case-dnd-tracker": {
+    "app": {
       "projectType": "application",
-      "schematics": {},
       "root": "",
-      "sourceRoot": "src",
+      "sourceRoot": "./",
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/case-dnd-tracker",
-            "index": "src/index.html",
-            "browser": "src/main.ts",
-            "polyfills": [],
-            "tsConfig": "tsconfig.app.json",
-            "assets": [
-              {
-                "glob": "favicon.ico",
-                "input": "src/",
-                "output": "/"
-              }
-            ],
-            "styles": [],
-            "scripts": []
+            "outputPath": {
+              "base": "./dist",
+              "browser": "."
+            },
+            "browser": "index.tsx",
+            "tsConfig": "tsconfig.json"
           },
           "configurations": {
             "production": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
-                }
-              ],
               "outputHashing": "all"
             },
             "development": {
@@ -53,21 +32,21 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "port": 3000
+          },
           "configurations": {
             "production": {
-              "buildTarget": "case-dnd-tracker:build:production"
+              "buildTarget": "app:build:production"
             },
             "development": {
-              "buildTarget": "case-dnd-tracker:build:development"
+              "buildTarget": "app:build:development"
             }
           },
           "defaultConfiguration": "development"
         }
       }
     }
-  },
-  "cli": {
-    "analytics": false
   }
 }

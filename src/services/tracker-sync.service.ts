@@ -114,6 +114,11 @@ export class TrackerSyncService {
           if (this.currentRetries > 0) {
             console.log("Connection re-established successfully.");
             this.currentRetries = 0;
+            // If we re-established connection, cancel any pending reconnect timeout.
+            if (this.retryTimeout) {
+              clearTimeout(this.retryTimeout);
+              this.retryTimeout = null;
+            }
           }
 
           // 5e.tools wraps data in a packet. We need to unwrap it.
@@ -185,8 +190,11 @@ export class TrackerSyncService {
   }
 
   private scheduleReconnect(): void {
+    // If a reconnect is already scheduled, don't queue another one. This prevents
+    // a cascade of errors on mobile resume from creating a loop.
     if (this.retryTimeout) {
-      clearTimeout(this.retryTimeout);
+      console.log('A reconnect attempt is already pending. Ignoring subsequent triggers.');
+      return;
     }
     this.cleanup();
 
@@ -199,11 +207,12 @@ export class TrackerSyncService {
       const waitSeconds = Math.round(waitTime / 1000);
 
       this.errorMessage.set(
-        `Connection failed. Retrying in ${waitSeconds}s... (Attempt ${this.currentRetries}/${this.maxRetries})`
+        `Connection lost. Retrying in ${waitSeconds}s... (Attempt ${this.currentRetries}/${this.maxRetries})`
       );
       
       console.log(`Scheduling reconnect in ${waitSeconds} seconds.`);
       this.retryTimeout = setTimeout(() => {
+        this.retryTimeout = null; // Clear the lock before the next attempt.
         if (this.lastRoomId) {
           this.connect(this.lastRoomId, true);
         }
@@ -269,9 +278,7 @@ export class TrackerSyncService {
       if (a.initiative !== b.initiative) {
         return b.initiative! - a.initiative!;
       }
-      // Initiatives are identical. Return 0 to use a stable sort,
-      // preserving the order from the DM's tracker.
-      return 0;
+      return a.name.localeCompare(b.name);
     });
 
     return {

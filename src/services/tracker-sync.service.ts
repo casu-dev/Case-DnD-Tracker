@@ -325,8 +325,14 @@ export class TrackerSyncService {
       round: payload.round,
       creatures: creaturesInOrder.map((row, index) => {
         const conditions = row.conditions || [];
-        const isPlayer = conditions.some(c => c.entity.name === 'Player');
-        const isNpc = conditions.some(c => c.entity.name === 'NPC');
+        const isPlayer = conditions.some(c => c.entity.name.toLowerCase() === 'player');
+        const isNpc = conditions.some(c => c.entity.name.toLowerCase() === 'npc');
+        const isBoss = conditions.some(c => c.entity.name.toLowerCase() === 'boss');
+
+        // Find the icon override condition
+        const iconOverrideCondition = conditions.find(c => c.entity.name.toLowerCase().startsWith('fa-'));
+        const iconOverrideClass = iconOverrideCondition ? iconOverrideCondition.entity.name : null;
+        const iconOverrideColor = iconOverrideCondition ? iconOverrideCondition.entity.color : null;
         
         return {
           id: `${row.name}-${row.initiative}-${index}`,
@@ -336,10 +342,16 @@ export class TrackerSyncService {
           hpMax: row.hpMax ?? null,
           isPlayer,
           isNpc,
+          isBoss,
           isActive: row.isActive,
+          iconOverrideClass,
+          iconOverrideColor,
           statusEffects: conditions
-            // Don't show the "Player" or "NPC" conditions in the list
-            .filter(c => c.entity.name !== 'Player' && c.entity.name !== 'NPC')
+            // Don't show internal conditions like "Player", "NPC", "Boss", or icon overrides
+            .filter(c => {
+              const nameLower = c.entity.name.toLowerCase();
+              return nameLower !== 'player' && nameLower !== 'npc' && nameLower !== 'boss' && !nameLower.startsWith('fa-');
+            })
             .map((condition) => ({
               name: condition.entity.name,
               color: condition.entity.color,

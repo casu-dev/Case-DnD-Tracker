@@ -19,9 +19,12 @@ export interface Creature {
   hpMax: number | null;
   isPlayer: boolean;
   isNpc: boolean;
+  isBoss: boolean;
   isActive: boolean; // Is it this creature's turn?
   statusEffects: StatusEffect[];
   woundInfo: WoundInfo | null;
+  iconOverrideClass: string | null;
+  iconOverrideColor: string | null;
 }
 
 export interface TrackerData {

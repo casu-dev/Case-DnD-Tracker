@@ -1,10 +1,10 @@
 <!-- Reconnection Modal -->
 @if (reconnectingAttempt()) {
-  <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog">
-    <div class="bg-stone-200 rounded-lg shadow-2xl p-8 text-center border-4 border-stone-400">
+  <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog" aria-label="Reconnecting Dialog">
+    <div class="bg-stone-200 rounded-lg shadow-2xl p-8 text-center border-4 border-stone-400" role="status" aria-live="polite">
       <h2 class="text-3xl font-dnd-header text-red-900 mb-4">Connection Lost</h2>
       <div class="flex items-center justify-center text-stone-700">
-        <i class="fas fa-spinner fa-spin mr-4 text-4xl"></i>
+        <i class="fas fa-spinner fa-spin mr-4 text-4xl" aria-hidden="true"></i>
         <p class="text-lg">Attempting to reconnect...</p>
       </div>
     </div>

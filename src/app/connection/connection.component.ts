@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ROOM_ID_STORAGE_KEY } from '../../services/tracker-sync.service';
+import { getRoomIdFromUrl } from '../../utils/room-id.util';
 
 @Component({
   selector: 'app-connection',
@@ -19,7 +20,7 @@ export class ConnectionComponent implements OnInit {
   roomId = signal('');
 
   ngOnInit(): void {
-    const roomIdFromUrl = this.getRoomIdFromUrl();
+    const roomIdFromUrl = getRoomIdFromUrl();
     if (roomIdFromUrl) {
       this.roomId.set(roomIdFromUrl);
       return; // Prioritize URL fragment
@@ -29,15 +30,6 @@ export class ConnectionComponent implements OnInit {
     if (savedRoomId) {
       this.roomId.set(savedRoomId);
     }
-  }
-
-  private getRoomIdFromUrl(): string | null {
-    const hash = window.location.hash;
-    // The format is #v1:token-id
-    if (hash && hash.startsWith('#v1:')) {
-      return hash.substring(4);
-    }
-    return null;
   }
 
   onConnect(): void {

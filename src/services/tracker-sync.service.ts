@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { TrackerData, WoundInfo } from '../models/tracker.model';
+import { getRoomIdFromUrl, setRoomIdInUrl, clearRoomIdFromUrl } from '../utils/room-id.util';
 
 // The new data structure received from the 5e.tools peerjs connection
 interface RawStatCol {
@@ -46,7 +47,7 @@ interface PeerPacket {
   };
 }
 
-// PeerJS is loaded from a script tag in index.html, so we declare it here to satisfy TypeScript.
+// PeerJS type declaration - Peer is loaded from script tag in index.html
 declare const Peer: any;
 
 export const ROOM_ID_STORAGE_KEY = '5e-tracker-room-id';
@@ -67,7 +68,7 @@ export class TrackerSyncService {
 
   constructor() {
     // Prioritize Room ID from URL fragment
-    const roomIdFromUrl = this.getRoomIdFromUrl();
+    const roomIdFromUrl = getRoomIdFromUrl();
     if (roomIdFromUrl) {
       this.connect(roomIdFromUrl);
       return; // Stop here if we have a URL-based ID
@@ -80,21 +81,12 @@ export class TrackerSyncService {
     }
   }
 
-  private getRoomIdFromUrl(): string | null {
-    const hash = window.location.hash;
-    // The format is #v1:token-id
-    if (hash && hash.startsWith('#v1:')) {
-      return hash.substring(4);
-    }
-    return null;
-  }
-
   connect(roomId: string, isReconnectAttempt = false): void {
     if (!isReconnectAttempt) {
       this.lastRoomId = roomId;
       // Store in both local storage (as fallback) and URL fragment (as primary)
       localStorage.setItem(ROOM_ID_STORAGE_KEY, roomId);
-      window.location.hash = `v1:${roomId}`;
+      setRoomIdInUrl(roomId);
       this.connectionState.set('connecting');
       this.errorMessage.set(null);
       this.trackerData.set(null);
@@ -199,13 +191,7 @@ export class TrackerSyncService {
   disconnect(): void {
     localStorage.removeItem(ROOM_ID_STORAGE_KEY);
     
-    // Clear the URL fragment without adding to history or reloading
-    if (window.history.pushState) {
-        history.pushState("", document.title, window.location.pathname + window.location.search);
-    } else {
-        // Fallback for older browsers
-        window.location.hash = '';
-    }
+    clearRoomIdFromUrl();
 
     this.lastRoomId = null;
     this.cleanup();

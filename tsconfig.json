@@ -14,6 +14,9 @@
       "node"
     ],
     "moduleResolution": "bundler",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,

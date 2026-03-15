@@ -46,8 +46,30 @@ interface PeerPacket {
   };
 }
 
-// PeerJS is loaded from a script tag in index.html, so we declare it here to satisfy TypeScript.
-declare const Peer: any;
+// Minimal PeerJS type declarations — PeerJS is loaded from a CDN script tag in index.html.
+interface PeerJSError extends Error {
+  type: string;
+}
+
+interface PeerDataConnection {
+  on(event: 'open', cb: () => void): void;
+  on(event: 'data', cb: (data: PeerPacket) => void): void;
+  on(event: 'close', cb: () => void): void;
+  on(event: 'error', cb: (err: PeerJSError) => void): void;
+  close(): void;
+}
+
+interface PeerInstance {
+  connect(id: string, options?: { reliable: boolean }): PeerDataConnection | null;
+  on(event: 'open', cb: (id: string) => void): void;
+  on(event: 'error', cb: (err: PeerJSError) => void): void;
+  on(event: 'disconnected', cb: () => void): void;
+  off(event: string): void;
+  destroyed: boolean;
+  destroy(): void;
+}
+
+declare const Peer: new () => PeerInstance;
 
 export const ROOM_ID_STORAGE_KEY = '5e-tracker-room-id';
 
@@ -55,10 +77,11 @@ export const ROOM_ID_STORAGE_KEY = '5e-tracker-room-id';
   providedIn: 'root',
 })
 export class TrackerSyncService {
-  private peer: any | null = null;
-  private connection: any | null = null;
+  private peer: PeerInstance | null = null;
+  private connection: PeerDataConnection | null = null;
   private lastRoomId: string | null = null;
-  private reconnectTimeout: any = null; // For handling reconnect timeouts
+  private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  private connectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
   readonly trackerData = signal<TrackerData | null>(null);
   readonly connectionState = signal<'disconnected' | 'connecting' | 'connected' | 'error' | 'waiting'>('disconnected');
@@ -74,7 +97,7 @@ export class TrackerSyncService {
     }
 
     // Fallback to local storage for existing sessions
-    const savedRoomId = localStorage.getItem(ROOM_ID_STORAGE_KEY);
+    const savedRoomId = this.storageGet(ROOM_ID_STORAGE_KEY);
     if (savedRoomId) {
       this.connect(savedRoomId);
     }
@@ -93,23 +116,38 @@ export class TrackerSyncService {
     if (!isReconnectAttempt) {
       this.lastRoomId = roomId;
       // Store in both local storage (as fallback) and URL fragment (as primary)
-      localStorage.setItem(ROOM_ID_STORAGE_KEY, roomId);
+      this.storageSet(ROOM_ID_STORAGE_KEY, roomId);
       window.location.hash = `v1:${roomId}`;
       this.connectionState.set('connecting');
       this.errorMessage.set(null);
       this.trackerData.set(null);
     }
-    
+
     // Clean up any existing connection before starting a new one.
     this.cleanup();
-    
+
+    // Timeout for the initial peer/connection establishment (30 seconds).
+    this.connectionTimeout = setTimeout(() => {
+      if (this.connectionState() === 'connecting' || this.connectionState() === 'waiting') {
+        const message = 'Connection timed out. The DM may be offline or the Room ID is incorrect.';
+        console.warn('Initial connection timed out.');
+        if (isReconnectAttempt) {
+          this.handleReconnectFailure(message);
+        } else {
+          this.errorMessage.set(message);
+          this.connectionState.set('error');
+          this.cleanup();
+        }
+      }
+    }, 30000);
+
     try {
       this.peer = new Peer();
 
       this.peer.on('open', (id: string) => {
         console.log('PeerJS client initialized with ID:', id);
 
-        this.connection = this.peer.connect(this.lastRoomId, { reliable: true });
+        this.connection = this.peer!.connect(roomId, { reliable: true });
 
         if (!this.connection) {
           const message = 'Failed to initiate connection. The Room ID might be invalid or the peer server is unreachable.';
@@ -125,6 +163,7 @@ export class TrackerSyncService {
         // --- Setup DataConnection Listeners ---
         this.connection.on('open', () => {
           console.log('PeerJS data connection is open.');
+          this.clearConnectionTimeout();
           if (isReconnectAttempt) {
             this.handleReconnectSuccess();
           }
@@ -153,15 +192,16 @@ export class TrackerSyncService {
           this.handleConnectionLoss('Connection to the DM was closed.');
         });
 
-        this.connection.on('error', (err: any) => {
+        this.connection.on('error', (err: PeerJSError) => {
           console.error('PeerJS connection error:', err);
           this.handleConnectionLoss(`Connection failed: ${err.message || 'An unknown error occurred.'}`);
         });
       });
 
       // --- Setup Peer Listeners ---
-      this.peer.on('error', (err: any) => {
+      this.peer.on('error', (err: PeerJSError) => {
         console.error('PeerJS peer error:', err);
+        this.clearConnectionTimeout();
         let message = 'A peer-to-peer error occurred.';
         if (err.type === 'peer-unavailable') {
           message = 'Could not find a DM with that Room ID. Please double-check the ID and ensure the DM is still hosting.';
@@ -197,7 +237,7 @@ export class TrackerSyncService {
   }
 
   disconnect(): void {
-    localStorage.removeItem(ROOM_ID_STORAGE_KEY);
+    this.storageRemove(ROOM_ID_STORAGE_KEY);
     
     // Clear the URL fragment without adding to history or reloading
     if (window.history.pushState) {
@@ -238,7 +278,14 @@ export class TrackerSyncService {
         }
       }, 10000); // 10-second timeout
 
-      this.connect(this.lastRoomId, true);
+      const roomId = this.lastRoomId;
+      if (!roomId) {
+        // Should not happen given the guard above, but protect against it.
+        this.connectionState.set('error');
+        this.errorMessage.set(reason);
+        return;
+      }
+      this.connect(roomId, true);
     } else {
       // We were not in a session, just show an error on the connection page.
       this.connectionState.set('error');
@@ -273,7 +320,15 @@ export class TrackerSyncService {
     this.disconnect(); // This resets state and brings user to the connection page.
   }
 
+  private clearConnectionTimeout(): void {
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+  }
+
   private cleanup(): void {
+    this.clearConnectionTimeout();
     if (this.connection) {
       this.connection.close();
       this.connection = null;
@@ -286,6 +341,31 @@ export class TrackerSyncService {
         this.peer.destroy();
       }
       this.peer = null;
+    }
+  }
+
+  private storageGet(key: string): string | null {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      console.warn('localStorage.getItem failed (storage may be unavailable).');
+      return null;
+    }
+  }
+
+  private storageSet(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      console.warn('localStorage.setItem failed (storage may be unavailable or quota exceeded).');
+    }
+  }
+
+  private storageRemove(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      console.warn('localStorage.removeItem failed (storage may be unavailable).');
     }
   }
 

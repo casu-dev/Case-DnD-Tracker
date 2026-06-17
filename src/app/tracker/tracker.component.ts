@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, input, output, effect } from '@angular/core';
 import { TrackerData } from '../../models/tracker.model';
 
+const HP_LOW_THRESHOLD = 0.5;
+const HP_CRITICAL_THRESHOLD = 0.25;
+
 @Component({
   selector: 'app-tracker',
   standalone: true,
@@ -56,10 +59,10 @@ export class TrackerComponent {
       return 'bg-stone-400'; // Default for unknown HP
     }
     const percentage = current / max;
-    if (percentage > 0.5) {
+    if (percentage > HP_LOW_THRESHOLD) {
       return 'bg-green-600';
     }
-    if (percentage > 0.25) {
+    if (percentage > HP_CRITICAL_THRESHOLD) {
       return 'bg-yellow-500';
     }
     return 'bg-red-700';

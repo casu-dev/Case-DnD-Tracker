@@ -46,17 +46,32 @@ interface PeerPacket {
   };
 }
 
-// PeerJS is loaded from a script tag in index.html, so we declare it here to satisfy TypeScript.
-declare const Peer: any;
+// Minimal type shapes for the PeerJS API we use. PeerJS is loaded from a CDN script tag.
+interface PeerInstance {
+  on(event: string, cb: (...args: any[]) => void): void;
+  off(event: string): void;
+  connect(id: string, opts: { reliable: boolean }): DataConnection | null;
+  destroyed: boolean;
+  destroy(): void;
+}
+
+interface DataConnection {
+  on(event: string, cb: (...args: any[]) => void): void;
+  close(): void;
+}
+
+declare const Peer: new () => PeerInstance;
 
 export const ROOM_ID_STORAGE_KEY = '5e-tracker-room-id';
+const ROOM_ID_URL_PREFIX = '#v1:';
+const RECONNECT_TIMEOUT_MS = 10_000;
 
 @Injectable({
   providedIn: 'root',
 })
 export class TrackerSyncService {
-  private peer: any | null = null;
-  private connection: any | null = null;
+  private peer: PeerInstance | null = null;
+  private connection: DataConnection | null = null;
   private lastRoomId: string | null = null;
   private reconnectTimeout: any = null; // For handling reconnect timeouts
 
@@ -80,11 +95,10 @@ export class TrackerSyncService {
     }
   }
 
-  private getRoomIdFromUrl(): string | null {
+  getRoomIdFromUrl(): string | null {
     const hash = window.location.hash;
-    // The format is #v1:token-id
-    if (hash && hash.startsWith('#v1:')) {
-      return hash.substring(4);
+    if (hash.startsWith(ROOM_ID_URL_PREFIX)) {
+      return hash.substring(ROOM_ID_URL_PREFIX.length);
     }
     return null;
   }
@@ -94,7 +108,7 @@ export class TrackerSyncService {
       this.lastRoomId = roomId;
       // Store in both local storage (as fallback) and URL fragment (as primary)
       localStorage.setItem(ROOM_ID_STORAGE_KEY, roomId);
-      window.location.hash = `v1:${roomId}`;
+      window.location.hash = `${ROOM_ID_URL_PREFIX.substring(1)}${roomId}`;
       this.connectionState.set('connecting');
       this.errorMessage.set(null);
       this.trackerData.set(null);
@@ -109,7 +123,7 @@ export class TrackerSyncService {
       this.peer.on('open', (id: string) => {
         console.log('PeerJS client initialized with ID:', id);
 
-        this.connection = this.peer.connect(this.lastRoomId, { reliable: true });
+        this.connection = this.peer!.connect(this.lastRoomId!, { reliable: true });
 
         if (!this.connection) {
           const message = 'Failed to initiate connection. The Room ID might be invalid or the peer server is unreachable.';
@@ -236,7 +250,7 @@ export class TrackerSyncService {
           console.log('Reconnect attempt timed out after 10 seconds.');
           this.handleReconnectFailure('Connection attempt timed out');
         }
-      }, 10000); // 10-second timeout
+      }, RECONNECT_TIMEOUT_MS);
 
       this.connect(this.lastRoomId, true);
     } else {
@@ -323,40 +337,38 @@ export class TrackerSyncService {
 
     return {
       round: payload.round,
-      creatures: creaturesInOrder.map((row, index) => {
-        const conditions = row.conditions || [];
-        const isPlayer = conditions.some(c => c.entity.name.toLowerCase() === 'player');
-        const isNpc = conditions.some(c => c.entity.name.toLowerCase() === 'npc');
-        const isBoss = conditions.some(c => c.entity.name.toLowerCase() === 'boss');
+      creatures: creaturesInOrder.map((row) => {
+        let isPlayer = false, isNpc = false, isBoss = false;
+        let iconOverrideClass: string | null = null;
+        let iconOverrideColor: string | null = null;
+        const statusEffects: { name: string; color: string; turns: number | null }[] = [];
 
-        // Find the icon override condition
-        const iconOverrideCondition = conditions.find(c => c.entity.name.toLowerCase().startsWith('fa-'));
-        const iconOverrideClass = iconOverrideCondition ? iconOverrideCondition.entity.name : null;
-        const iconOverrideColor = iconOverrideCondition ? iconOverrideCondition.entity.color : null;
-        
+        for (const c of row.conditions ?? []) {
+          const nameLower = c.entity.name.toLowerCase();
+          if (nameLower === 'player') { isPlayer = true; continue; }
+          if (nameLower === 'npc') { isNpc = true; continue; }
+          if (nameLower === 'boss') { isBoss = true; continue; }
+          if (nameLower.startsWith('fa-')) {
+            iconOverrideClass = c.entity.name;
+            iconOverrideColor = c.entity.color;
+            continue;
+          }
+          statusEffects.push({ name: c.entity.name, color: c.entity.color, turns: c.entity.turns });
+        }
+
         return {
-          id: `${row.name}-${row.initiative}-${index}`,
+          id: `${row.name}-${row.initiative}`,
           name: row.name,
           initiative: row.initiative,
-          hpCurrent: row.hpCurrent ?? null,
-          hpMax: row.hpMax ?? null,
+          hpCurrent: row.hpCurrent,
+          hpMax: row.hpMax,
           isPlayer,
           isNpc,
           isBoss,
           isActive: row.isActive,
           iconOverrideClass,
           iconOverrideColor,
-          statusEffects: conditions
-            // Don't show internal conditions like "Player", "NPC", "Boss", or icon overrides
-            .filter(c => {
-              const nameLower = c.entity.name.toLowerCase();
-              return nameLower !== 'player' && nameLower !== 'npc' && nameLower !== 'boss' && !nameLower.startsWith('fa-');
-            })
-            .map((condition) => ({
-              name: condition.entity.name,
-              color: condition.entity.color,
-              turns: condition.entity.turns,
-          })),
+          statusEffects,
           woundInfo: this.getWoundLevelInfo(row.hpWoundLevel),
         };
       }),
